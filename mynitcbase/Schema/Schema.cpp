@@ -179,9 +179,7 @@ int Schema::createRel(char relName[],int nAttrs, char attrs[][ATTR_SIZE],int att
 }
 
 int Schema::deleteRel(char *relName) {
-    // if the relation to delete is either Relation Catalog or Attribute Catalog
-	// (check if the relation names are either "RELATIONCAT" and "ATTRIBUTECAT".
-	// you may use the following constants: RELCAT_NAME and ATTRCAT_NAME)
+    
 	if (strcmp(relName, RELCAT_RELNAME) == 0 || strcmp(relName, ATTRCAT_RELNAME) == 0)
         return E_NOTPERMITTED;
 

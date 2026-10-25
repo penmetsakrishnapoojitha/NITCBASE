@@ -7,7 +7,7 @@
 #include "../Cache/RelCacheTable.h"
 #include "../define/constants.h"
 #include "../define/id.h"
-
+extern long long comparisonCount;
 class BlockAccess {
  public:
   static int search(int relId, Attribute *record, char *attrName, Attribute attrVal, int op);
