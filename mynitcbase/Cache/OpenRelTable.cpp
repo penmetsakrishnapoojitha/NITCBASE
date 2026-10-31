@@ -102,17 +102,30 @@ OpenRelTable::OpenRelTable()
 	strcpy(tableMetaInfo[ATTRCAT_RELID].relName, ATTRCAT_RELNAME);
 }
 
-OpenRelTable::~OpenRelTable()
-{
-	// free all the memory that you allocated in the constructor
+// // OpenRelTable::~OpenRelTable()
+// // {
+// // 	// free all the memory that you allocated in the constructor
+// 
+// // 	//? close all open relations (from rel-id = 2 onwards. Why?)
+// // 	for (int i = 2; i < MAX_OPEN; ++i)
+// // 		if (!tableMetaInfo[i].free)
+// // 			OpenRelTable::closeRel(i); // we will implement this function later
+// 
+// // 	// free the memory allocated for rel-id 0 and 1 in the caches
+// // }
 
-	//? close all open relations (from rel-id = 2 onwards. Why?)
-	for (int i = 2; i < MAX_OPEN; ++i)
-		if (!tableMetaInfo[i].free)
-			OpenRelTable::closeRel(i); // we will implement this function later
+OpenRelTable::~OpenRelTable() {
 
-	// free the memory allocated for rel-id 0 and 1 in the caches
-	    // * Closing the catalog relations in the relation cache
+    // for i from 2 to MAX_OPEN-1:
+	for (int relId = 2; relId < MAX_OPEN; relId++)
+    {
+        // if ith relation is still open:
+		if (OpenRelTable::tableMetaInfo[relId].free == false)
+            // close the relation using openRelTable::closeRel().
+			OpenRelTable::closeRel(relId);
+    }
+
+    // * Closing the catalog relations in the relation cache
     // TODO: release the relation cache entry of the attribute catalog
     // if RelCatEntry of the ATTRCAT_RELID-th RelCacheEntry has been modified 
 	if (RelCacheTable::relCache[ATTRCAT_RELID]->dirty)
@@ -365,16 +378,27 @@ int OpenRelTable::closeRel(int relId) {
 	//* because we are not modifying the attribute cache at this stage,
 	//* write-back is not required. We will do it in subsequent
   	//* stages when it becomes needed)
-
 	AttrCacheEntry *head = AttrCacheTable::attrCache[relId];
 	AttrCacheEntry *next = head->next;
 
-	while (next) {
+	while (true) {
+		if (head->dirty)
+		{
+			Attribute attrCatRecord [ATTRCAT_NO_ATTRS];
+			AttrCacheTable::attrCatEntryToRecord(&(head->attrCatEntry), attrCatRecord);
+
+			RecBuffer attrCatBlockBuffer (head->recId.block);
+			attrCatBlockBuffer.setRecord(attrCatRecord, head->recId.slot);
+		}
+
+
 		free (head);
 		head = next;
+
+		if (head == NULL) break;
 		next = next->next;
 	}
-	free(head);	
+
 
 	// update `tableMetaInfo` to set `relId` as a free slot
 	// update `relCache` and `attrCache` to set the entry at `relId` to nullptr
